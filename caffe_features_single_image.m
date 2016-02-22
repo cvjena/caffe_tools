@@ -45,8 +45,10 @@ function [ features ] = caffe_features_single_image( i_image, f_mean, net, s_lay
     data         = caffe_prepare_image( i_image, f_mean );
     
     % check that network was prepared to work on single images
-    tmp_netshape = net.blobs('prob').shape;
-    assert (  tmp_netshape(2) == 1, 'network not reshaped for passing only a single image' );
+    net_input_shape  = net.blobs('data').shape;    
+    i_batch_size     = net_input_shape(4);
+    
+    assert (  i_batch_size == 1, 'network not reshaped for passing only a single image' );
     
     % run a single forward pass
     [~] = net.forward({data});    
