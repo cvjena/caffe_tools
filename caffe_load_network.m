@@ -20,13 +20,15 @@ function [net, mean_data] = caffe_load_network ( s_pathtodeployfile, s_pathtomod
 
     %% load network
     net = caffe.Net(s_pathtodeployfile, s_pathtomodel, s_phase); % create net and load weights
+    
+    % for which input sizes has the network been trained?
+    i_currentNetInputSize = net.blobs('data').shape;    
 
     %% reshape network input for batch or single-image processing
     if ( b_reshape_for_single_image_processing )
         %
         % reshape network to run only a single image in a forward pass instead
         % of 10 (for which it was trained)
-        i_currentNetInputSize = net.blobs('data').shape;
         net.blobs('data').reshape([i_currentNetInputSize(1) ...
                                    i_currentNetInputSize(2) ...
                                    i_currentNetInputSize(3) ...
