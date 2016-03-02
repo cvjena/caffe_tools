@@ -1,5 +1,5 @@
-function [ features ] = caffe_features_multiple_images( s_filelist, f_mean, net, s_layer)
-% function [ features ] = caffe_features_multiple_images( s_filelist, f_mean, net, s_layer)
+function [ features ] = caffe_features_multiple_images( s_filelist, f_mean, net, settings ) 
+% function [ features ] = caffe_features_multiple_images( s_filelist, f_mean, net, settings ) 
 % 
 %  BRIEF:
 %   Run a forward pass of a given net on a set of images which are 
@@ -15,7 +15,15 @@ function [ features ] = caffe_features_multiple_images( s_filelist, f_mean, net,
 %                  Required to be cropped to the input size of your
 %                  network! See caffe_load_network.m
 %   net         -- a previously loaded network, see caffe_load_network.m
-%   s_layer     -- optional (default: 'relu7'), string, specifies the layer used for feature exatraction
+%   settings    -- optional, (default []), struct with following possible fields
+%     .s_layer     -- optional (default: 'relu7'), string, specifies the layer used for feature exatraction
+%     .b_apply_bilinear_pooling
+%                  -- optional (default: false),
+%     .b_skip_normalization_in_bilinear_pooling
+%                  -- optional (default: false),
+%     .b_apply_log_M
+%                  -- optional (default: false),
+%     .f_sigma     -- optional (default: 1e-5),
 %
 
 
@@ -27,8 +35,16 @@ function [ features ] = caffe_features_multiple_images( s_filelist, f_mean, net,
         error ( 'no network passed');
     end
     if (nargin<4)
-        s_layer = 'relu7';
-    end 
+        settings = [];
+    end    
+    
+    
+    s_layer                  = getFieldWithDefault ( settings, 's_layer',                  'relu7');
+    b_apply_bilinear_pooling = getFieldWithDefault ( settings, 'b_apply_bilinear_pooling', false );
+    b_skip_normalization_in_bilinear_pooling ...
+                             = getFieldWithDefault ( settings, 'b_skip_normalization_in_bilinear_pooling', false );
+    b_apply_log_M            = getFieldWithDefault ( settings, 'b_apply_log_M',            false );
+    f_sigma    
     
     %% prepare list of filenames
     b_filelistmode = ischar( s_filelist );
@@ -81,23 +97,81 @@ function [ features ] = caffe_features_multiple_images( s_filelist, f_mean, net,
         [~] = net.forward( batch_data );
         
         % fetch activations from specified layer
-        tmp_feat = net.blobs( s_layer ).get_data();    
+        tmp_feat = net.blobs( s_layer ).get_data();
         
-        % vectorize and concatenate activation maps
-        if ( ndims( tmp_feat ) > 2 )
-            tmp_feat = reshape( tmp_feat, ...
-                                size(tmp_feat,1)*size(tmp_feat,2)*size(tmp_feat,3), ...
-                                size(tmp_feat,4)...
-                              );    
-        end
-                      
-        % allocate enough space in first run       
-        if ( ~exist('features','var') )
-            features = zeros( size(tmp_feat,1), size(s_filelist_to_use,1), 'single');
+        %% optional: bilinear pooling
+        if ( b_apply_bilinear_pooling )    
+            %% efficient version: reshape and sum
+            %
+            % compute outer product with sum pooling
+            % this is consistent with the matlab code of liu et al. iccv 2015
+            for i_img = 1:i_batch_size
+                if ( ndims ( tmp_feat ) == 4 )
+                    i_channelCount = size ( tmp_feat, 3);   
+                    % reshape with [] automatically resizes to correct number of examples,
+                    % this is equivalent to ...size(features,1)*size(features,2),size(features,3) );                    
+                    featImg = reshape ( tmp_feat(:,:,:,i_img), [],i_channelCount );% size(features,1)*size(features,2),size(features,3) , 'forder');
+                    
+                    % response normalization to increase comparability of features 
+                    % this improves the condition of the bilinear matrix 
+                    %
+                    if ( ~b_skip_normalization_in_bilinear_pooling )
+                        %FIXME this equals 1/abs(sum(features,2))...         
+                        featImg = bsxfun(@times, featImg, 1./sqrt(sum(featImg,2).^2)); 
+                    end
+                    % compute outer product
+                    featImg = featImg'*featImg;
+                else
+                    featImg = tmp_feat(:,i_img)*tmp_feat(:,i_img)';
+                end                    
+
+                if ( b_apply_log_M )
+                    %channel_count = size(b(ismember(b_struct(3,:)',layer_image)).data,3);
+                    %selection_matrix = logical(tril(ones(channel_count)));            
+                    %
+                    %features = logm(features'*features+1e-5*eye(channel_count));
+
+                    featImg = logm( featImg + f_sigma*eye( size(featImg) ) );
+                end
+
+                % take lower tri-angle only to remove redundant information
+                % -> logical automatically reshapes into vector
+                featImg = featImg ( logical(tril(ones(size(featImg)))));     
+
+                % pass through signed square root step  (see Lin et al 2015 ICCV)
+                featImg = sign(featImg).*sqrt(abs(featImg));
+
+                % apply L2 normalization (see Lin et al 2015 ICCV)
+                featImg = featImg / sqrt(sum(featImg.^2));    
+                
+                % allocate enough space in first run       
+                if ( ~exist('features','var') )
+                    features = zeros( size(featImg,1), size(s_filelist_to_use,1), 'single');
+                end  
+                
+                % store computed feature accordingly
+                features( :, slices(i)+i_img-1 ) = featImg; 
+            end
+        else
+            % vectorize and concatenate activation maps
+            if ( ndims( tmp_feat ) > 2 )
+                tmp_feat = reshape( tmp_feat, ...
+                                    size(tmp_feat,1)*size(tmp_feat,2)*size(tmp_feat,3), ...
+                                    size(tmp_feat,4)...
+                                  );    
+            end 
+            
+            % allocate enough space in first run       
+            if ( ~exist('features','var') )
+                features = zeros( size(tmp_feat,1), size(s_filelist_to_use,1), 'single');
+            end   
+            
+            % store computed feature accordingly
+            features( :, slices(i):(slices(i+1)-1) ) = tmp_feat( :, 1:(slices(i+1)-slices(i)) );            
         end
         
-        % store computed feature accordingly
-        features( :, slices(i):(slices(i+1)-1) ) = tmp_feat( :, 1:(slices(i+1)-slices(i)) );
+       
+
     end
     
     % convert output to double precision
