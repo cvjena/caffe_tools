@@ -29,6 +29,20 @@ function initWorkspaceCaffeTools
         
         s_dest_caffebuild     = sprintf( '/home/freytag/lib/caffe_%s/matlab/', s_hostname );    
         CAFFEDIR              = s_dest_caffebuild;       
+        %note: temporary usage of marcels recent caffe version
+        %CAFFEDIR              = '/home/simon/Research/lib/caffe.current/matlab/';
+    elseif strcmp( getenv('USER'), 'rodner')
+        [~, s_hostname]       = system( 'hostname' );
+        s_hostname            = 'pollux';%s_hostname ( 1:(length(s_hostname)-1) ) ;
+
+        s_dest_caffebuild     = sprintf( '/home/freytag/lib/caffe_%s/matlab/', s_hostname );
+        CAFFEDIR              = s_dest_caffebuild;
+    elseif strcmp( getenv('USER'), 'simon')     
+        [~, s_hostname]       = system( 'hostname' );
+        s_hostname            = s_hostname ( 1:(length(s_hostname)-1) ) ;         
+                        
+        s_dest_caffebuild     = sprintf( '/home/freytag/lib/caffe_%s/matlab/', s_hostname );    
+        CAFFEDIR              = '/home/simon/Research/lib/caffe.current/matlab/';%s_dest_caffebuild;
     else          
         fprintf('Unknown user %s and unknown default settings', getenv('USER') ); 
     end
