@@ -123,8 +123,13 @@ function [ features ] = caffe_features_multiple_images( s_filelist, f_mean, net,
                     % this improves the condition of the bilinear matrix 
                     %
                     if ( ~b_skip_normalization_in_bilinear_pooling )
-                        %FIXME this equals 1/abs(sum(features,2))...         
-                        featImg = bsxfun(@times, featImg, 1./sqrt(sum(featImg,2).^2)); 
+                        %this equals 1/abs(sum(features,2))...         
+                        %
+                        % note: the max... is just for security reasons to
+                        % prevent division by zero in case that *all*
+                        % values should be zero or the signed sum equals zero
+                        %
+                        featImg = bsxfun(@times, featImg, 1./( max( 10e-8, sqrt(sum(featImg,2).^2) ) )      ); 
                     end
                     % compute outer product
                     featImg = featImg'*featImg;
