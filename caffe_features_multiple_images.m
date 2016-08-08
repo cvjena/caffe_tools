@@ -44,7 +44,7 @@ function [ features ] = caffe_features_multiple_images( s_filelist, f_mean, net,
     b_skip_normalization_in_bilinear_pooling ...
                              = getFieldWithDefault ( settings, 'b_skip_normalization_in_bilinear_pooling', false );
     b_apply_log_M            = getFieldWithDefault ( settings, 'b_apply_log_M',            false );
-    f_sigma    
+    f_sigma                  = getFieldWithDefault ( settings, 'f_sigma',                  1e-5 );   
     
     %% prepare list of filenames
     b_filelistmode = ischar( s_filelist );
@@ -106,7 +106,14 @@ function [ features ] = caffe_features_multiple_images( s_filelist, f_mean, net,
             % compute outer product with sum pooling
             % this is consistent with the matlab code of liu et al. iccv 2015
             for i_img = 1:i_batch_size
-                if ( ndims ( tmp_feat ) == 4 )
+                
+                if ( i_batch_size ==1 )
+                    b_has_spatial_support = ( ndims ( tmp_feat ) == 3 );
+                else
+                    b_has_spatial_support = ( ndims ( tmp_feat ) == 4 );
+                end
+                
+                if ( b_has_spatial_support )
                     i_channelCount = size ( tmp_feat, 3);   
                     % reshape with [] automatically resizes to correct number of examples,
                     % this is equivalent to ...size(features,1)*size(features,2),size(features,3) );                    
