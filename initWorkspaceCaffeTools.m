@@ -5,7 +5,7 @@ function initWorkspaceCaffeTools
 % 
 % BRIEF:
 %   Add local subfolders and 3rd party libraries to Matlabs work space.
-%   Needs to be adapted to your system!
+%   NEEDS TO BE ADAPTED TO YOUR SYSTEM!
 % 
 % 
 %   Exemplary call from external position:
@@ -15,7 +15,9 @@ function initWorkspaceCaffeTools
 %        initWorkspaceCaffeTools;
 %        cd ( currentDir );
 % 
-
+%   Provides s_path_to_caffe as global variable.
+% 
+%   Author: Alexander Freytag
 
     %% setup paths of 3rd-party libraries in a user-specific manner
 
@@ -30,7 +32,7 @@ function initWorkspaceCaffeTools
         s_dest_caffebuild     = sprintf( '/home/freytag/lib/caffe_%s/matlab/', s_hostname );  
         CAFFEDIR              = s_dest_caffebuild;       
 
-        CAFFEDIR              = '/home/freytag/lib/caffe_pollux_2016_08_23';
+        CAFFEDIR              = '/home/freytag/lib/caffe_pollux_2016_08_23/matlab/';
 
     elseif strcmp( getenv('USER'), 'rodner')
         [~, s_hostname]       = system( 'hostname' );
