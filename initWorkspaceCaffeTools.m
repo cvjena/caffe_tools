@@ -27,8 +27,11 @@ function initWorkspaceCaffeTools
         [~, s_hostname]       = system( 'hostname' );
         s_hostname            = s_hostname ( 1:(length(s_hostname)-1) ) ;    
         
-        s_dest_caffebuild     = sprintf( '/home/freytag/lib/caffe_%s/matlab/', s_hostname );    
+        s_dest_caffebuild     = sprintf( '/home/freytag/lib/caffe_%s/matlab/', s_hostname );  
         CAFFEDIR              = s_dest_caffebuild;       
+        % note: try that one on pollux
+        CAFFEDIR              = '/home/freytag/lib/caffe_pollux_2016_08_23';
+        
         %note: temporary usage of marcels recent caffe version
         %CAFFEDIR              = '/home/simon/Research/lib/caffe.current/matlab/';
     elseif strcmp( getenv('USER'), 'rodner')
