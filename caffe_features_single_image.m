@@ -88,8 +88,13 @@ function [ features ] = caffe_features_single_image( i_image, f_mean, net, setti
             % this improves the condition of the bilinear matrix 
             %
             if ( ~b_skip_normalization_in_bilinear_pooling )
-                %FIXME this equals 1/abs(sum(features,2))...
-                features = bsxfun(@times, features, 1./sqrt(sum(features,2).^2)); 
+                %this equals 1/abs(sum(features,2))...         
+                %
+                % note: the max... is just for security reasons to
+                % prevent division by zero in case that *all*
+                % values should be zero or the signed sum equals zero
+                %
+                features = bsxfun(@times, features, 1./( max( 10e-8, sqrt(sum(features,2).^2) ) )      );                 
             end
             % compute outer product
             features = features'*features;

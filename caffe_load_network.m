@@ -38,7 +38,10 @@ function [net, mean_data] = caffe_load_network ( s_pathtodeployfile, s_pathtomod
     end
     
     %% load mean image and adapt to network input size
-    mean_data  = caffe.io.read_mean( s_meanfile );
+    load ( s_meanfile, 'mean_data' );
+    % note: old caffe versions needed the explicit function:
+    %mean_data  = caffe.io.read_mean( s_meanfile );
+    
     % crop center from mean file according to network size
     i_sizeMean = size( mean_data );
     offset_row = floor ( int32( i_sizeMean(1)-i_currentNetInputSize(1) ) / 2 ) + 1;
