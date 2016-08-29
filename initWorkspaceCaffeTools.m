@@ -17,9 +17,9 @@ function initWorkspaceCaffeTools
 % 
 
 
-
     %% setup paths of 3rd-party libraries in a user-specific manner
 
+    
     CAFFEDIR            = [];
 
         
@@ -29,9 +29,15 @@ function initWorkspaceCaffeTools
         
         s_dest_caffebuild     = sprintf( '/home/freytag/lib/caffe_%s/matlab/', s_hostname );    
         CAFFEDIR              = s_dest_caffebuild;       
+    elseif strcmp( getenv('USER'), 'alex') 
+        CAFFEDIR              = '/home/alex/lib/caffe/matlab/';
     else          
         fprintf('Unknown user %s and unknown default settings', getenv('USER') ); 
     end
+    
+    %% make path to caffe known as global variable
+    global s_path_to_caffe;
+    s_path_to_caffe     = CAFFEDIR;      
 
     %% add paths which come with this repository
     
