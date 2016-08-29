@@ -24,6 +24,10 @@ function [ features ] = caffe_features_multiple_images( s_filelist, f_mean, net,
 %     .b_apply_log_M
 %                  -- optional (default: false),
 %     .f_sigma     -- optional (default: 1e-5),
+%     .s_filename_prefix
+%                  -- optional (default: ''), if not empty, this string
+%                  will be appended to the filenames given in the filelist
+%                  (useful if list contains only relative filenames)
 %
 
 
@@ -44,7 +48,9 @@ function [ features ] = caffe_features_multiple_images( s_filelist, f_mean, net,
     b_skip_normalization_in_bilinear_pooling ...
                              = getFieldWithDefault ( settings, 'b_skip_normalization_in_bilinear_pooling', false );
     b_apply_log_M            = getFieldWithDefault ( settings, 'b_apply_log_M',            false );
-    f_sigma                  = getFieldWithDefault ( settings, 'f_sigma',                  1e-5 );   
+    f_sigma                  = getFieldWithDefault ( settings, 'f_sigma',                  1e-5 ); 
+    %
+    s_filename_prefix        = getFieldWithDefault ( settings, 's_filename_prefix',        '');
     
     %% prepare list of filenames
     b_filelistmode = ischar( s_filelist );
@@ -55,6 +61,11 @@ function [ features ] = caffe_features_multiple_images( s_filelist, f_mean, net,
         s_filelist_to_use  = textscan(fid,'%s');
         s_filelist_to_use  = s_filelist_to_use{1};
         fclose(fid);
+        
+        if ( ~isempty( s_filename_prefix ) )
+            s_filelist_to_use = strcat( s_filename_prefix, s_filelist_to_use );
+%             s_filelist_to_use = cellfun(@(c)[s_filename_prefix, c],s_filelist_to_use, 'uni', false );
+        end
     else
         % use the passed filelist
         s_filelist_to_use  = s_filelist;
